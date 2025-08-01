@@ -1,5 +1,5 @@
 import { useState } from "react";
-import RulesModal from "../components/RulesModal";
+import RulesModal from "../../components/RulesModal";
 
 
 export default function TestEntrance() {

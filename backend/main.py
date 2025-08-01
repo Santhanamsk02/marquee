@@ -53,4 +53,3 @@ async def submit_exam(data: Request):
     results_collection.insert_one(result_doc)
     return {"message": f"Result saved for {username}"}
 
-

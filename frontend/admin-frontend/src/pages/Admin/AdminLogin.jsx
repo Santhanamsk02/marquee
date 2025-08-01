@@ -52,7 +52,7 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card animate__animated animate__fadeIn">
         <div className="login-header">
-          <h2>LOGIN</h2>
+          <h2>ADMIN LOGIN</h2>
           <p>Please enter your credentials to continue</p>
         </div>
 
