@@ -5,8 +5,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import Students from "./pages/Students";
 import Results from "./pages/Results";
-import Questions from "./pages/Questions";
+
 import Dashboard from "./pages/Dashboard";
+import MultiStepForm from "./pages/MultiStepForm";
+import MCQTest from "./pages/MCQTest";
 
 
 
@@ -26,8 +28,9 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
 <Route path="/admin/students" element={<Students />} />
 <Route path="/admin/results" element={<Results />} />
-        <Route path="/admin/questions" element={<Questions />} />
+        <Route path="/admin/questions" element={<MultiStepForm/>} />
         <Route path="/test" element={<Test />} />
+        <Route path="/mcqtest" element={<MCQTest/>} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="*" element={<Login />} />
       </Routes>

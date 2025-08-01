@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 
 
 function Test() {
-  const [questions, setQuestions] = useState([]);
+  const [information, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
   const [output, setOutput] = useState("");
   const [malpractice, setMalpractice] = useState(false);
+  const [examFinished, setExamFinished] = useState(false);
   const [malpracticeType, setMalpracticeType] = useState([]);
   const [timeTaken, setTimeTaken] = useState(0);
   const [results, setResults] = useState([]);
@@ -17,10 +18,9 @@ function Test() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:8000/admin/questions")
+    fetch("http://localhost:8000/admin/codingquestions")
       .then(res => res.json())
-      .then(data => setQuestions(data));
-    
+      .then(data => setQuestions(data[0].Coding));
   }, []);
 
   useEffect(() => {
@@ -43,62 +43,44 @@ function Test() {
     };
   }, []);
 
-  const submitAndLogout = async (detectedType) => {
-    const username = localStorage.getItem("token");
 
+
+   const submitAndLogout = async (detectedType) => {
+    setShowPopup(true);
+    
+    const username = localStorage.getItem("token");
+   
     const resultData = {
-      title: questions[index]?.title || "Unknown",
-      code,
+      title: information[index].question,
       language,
-      expected_output: questions[index]?.expected_output || "",
-      output,
+      expected_output: information[index].expectedOutput,
       success: false,
       malpractice: true,
       malpractice_type: [...new Set([...malpracticeType, detectedType])],
-      timeTaken: Math.floor((Date.now() - startTime) / 1000)
-    };
+      timeTaken: Math.floor((Date.now() - startTime) / 1000),
 
+    };
+     console.log(resultData);
     const newResults = [...results];
     newResults[index] = resultData;
 
     await fetch("http://localhost:8000/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, results: newResults })
+      body: JSON.stringify({ username, results: newResults,totalMarks: newResults.filter(r => r?.success).length,test_type:"Coding",malpractice:detectedType })
     });
-
-    setShowPopup(true);
+    setExamFinished(true);
     setTimeout(() => {
       localStorage.removeItem("token");
       window.location.href = "/login";
-    }, 4000);
+    }, 3000);
   };
 
-  useEffect(() => {
-    const handleCopy = async (e) => {
-      e.preventDefault();
-      setMalpractice(true);
-      setMalpracticeType(prev => [...new Set([...prev, "Copy"])]);
-      await submitAndLogout("Copy");
-    };
-
-    const handleBlur = async () => {
-      setMalpractice(true);
-      setMalpracticeType(prev => [...new Set([...prev, "Tab Switch"])]);
-      await submitAndLogout("Tab Switch");
-    };
-
-    document.addEventListener("copy", handleCopy);
-    window.addEventListener("blur", handleBlur);
-    return () => {
-      document.removeEventListener("copy", handleCopy);
-      window.removeEventListener("blur", handleBlur);
-    };
-  }, []);
 
   const handleCompile = async () => {
     const endTime = Date.now();
-    const question = questions[index];
+    const question = information[index];
+    
 
     const res = await fetch("http://localhost:8000/compile", {
       method: "POST",
@@ -106,7 +88,7 @@ function Test() {
       body: JSON.stringify({
         code,
         language,
-        expected_output: question.expected_output
+        expected_output: question.expectedOutput
       })
     });
 
@@ -116,10 +98,10 @@ function Test() {
     const questionTime = Math.floor((endTime - startTime) / 1000);
 
     const resultData = {
-      title: question.title,
+      title: information[index].question,
       code,
       language,
-      expected_output: question.expected_output,
+      expected_output: information[index].expectedOutput,
       output: data.output,
       success: data.success,
       malpractice,
@@ -134,6 +116,31 @@ function Test() {
     setStartTime(Date.now());
   };
 
+  useEffect(() => {
+    const handleCopy = async (e) => {
+      e.preventDefault();
+      if (examFinished) return;
+      setMalpractice(true);
+      setMalpracticeType(prev => [...new Set([...prev, "Copy"])]);
+      await submitAndLogout("Copy");
+    };
+
+    const handleBlur = async (e) => {
+      if (examFinished) return;
+      setMalpractice(true);
+      setMalpracticeType(prev => [...new Set([...prev, "Tab Switch"])]);
+      await submitAndLogout("Tab Switch");
+    };
+
+    document.addEventListener("copy", handleCopy);
+    window.addEventListener("blur", handleBlur);
+    return () => {
+      document.removeEventListener("copy", handleCopy);
+      window.removeEventListener("blur", handleBlur);
+    };
+  });
+  
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -143,7 +150,7 @@ function Test() {
   const handleQuestionChange = (newIndex) => {
     setIndex(newIndex);
     setOutput("");
-    setCode("")// Clear output when changing questions
+    setCode("")
   };
 
   const handleFinishExam = async () => {
@@ -151,10 +158,13 @@ function Test() {
     await fetch("http://localhost:8000/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, results })
+      body: JSON.stringify({
+        username, results, totalMarks: results.filter(r => r?.success).length, test_type: "Coding", malpractice:false
+       })
     });
     
     setShowCompletionPopup(true);
+    setExamFinished(true);
     setTimeout(() => {
       localStorage.removeItem("token");
       window.location.href = "/login";
@@ -181,15 +191,15 @@ function Test() {
       </div>
 
       <div className="main-content">
-        {questions.length > 0 ? (
+        {information.length > 0 ? (
           <div className="row g-4">
             <div className="col-md-5">
               <div className="question-card glass-card">
                 <h3 className="question-title">
-                  Question {index + 1} of {questions.length} 
+                  Question {index + 1} of {information.length} 
                 </h3>
                 <div className="txt">
-                  {questions[index].title}
+                  {information[index].question}
                 </div>
                 <div className="output-container">
                   <h5>Output:</h5>
@@ -260,7 +270,7 @@ function Test() {
         
         <button 
           className="btn btn-outline-primary"
-          disabled={index === questions.length - 1}
+          disabled={index === information.length - 1}
           onClick={() => handleQuestionChange(index + 1)}
         >
           Next <i className="bi bi-arrow-right"></i>

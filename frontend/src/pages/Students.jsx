@@ -1,19 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import * as yup from "yup";
 import { useFormik } from "formik";
 
 
 const studentSchema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  rollno: yup.string().required("Roll No is required"),
-  username: yup.string().required("Username is required"),
-  password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
-  email: yup.string().email("Invalid email").required("Email is required"),
-  mobile: yup.string().matches(/^[0-9]{10}$/, "Invalid mobile number").required("Mobile is required"),
-  classSection: yup.string().required("Class & Section is required"),
-  department: yup.string().required("Department is required"),
-  cgpa: yup.number().min(0, "CGPA must be at least 0").max(10, "CGPA cannot exceed 10").required("CGPA is required"),
-  regno: yup.string().required("Registration No is required")
+  name: yup.string(),
+  rollno: yup.string(),
+  username: yup.string(),
+  password: yup.string().min(6, "Password must be at least 6 characters"),
+  email: yup.string().email("Invalid email"),
+  mobile: yup.string().matches(/^[0-9]{10}$/, "Invalid mobile number"),
+  classSection: yup.string(),
+  department: yup.string(),
+  cgpa: yup.number().min(0, "CGPA must be at least 0").max(10, "CGPA cannot exceed 10"),
+  regno: yup.string()
 });
 
 const departments = ["IT", "CSE", "AIML", "AIDS", "EEE", "ECE", "MECH", "CSBS"];
@@ -77,6 +77,40 @@ export default function Students() {
 
   const closeModal = () => {
     setSelectedStudent(null);
+  };
+const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://localhost:8000/admin/students/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.detail || "Upload failed");
+      } else {
+      
+        setShowSuccessModal(true);
+        fetchStudents();
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file");
+    }
+  }
+
+  const handleUploadClick = (e) => {
+    e.preventDefault();
+    fileInputRef.current.click();
   };
 
   return (
@@ -235,10 +269,22 @@ export default function Students() {
               )}
             </div>
           </div>
-
+          <div className="d-flex justify-content-end ">
+            <button className="upload-csv-btn btn  me-4 submit-btn" onClick={(e) => { handleUploadClick(e) }}>
+        <i className="bi bi-file-earmark-arrow-up-fill"></i> Upload from Excel
+      </button>
+      <input
+        type="file"
+        accept=".csv, .xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
           <button type="submit" className="submit-btn">
             Add Student
           </button>
+          </div>
+        
         </form>
       </div>
 

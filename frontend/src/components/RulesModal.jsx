@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 
-export default function RulesModal({ onClose }) {
+export default function RulesModal({ onClose, test }) {
   const [isVisible, setIsVisible] = useState(false);
   const [acceptHover, setAcceptHover] = useState(false);
   const [cancelHover, setCancelHover] = useState(false);
@@ -18,7 +18,11 @@ export default function RulesModal({ onClose }) {
     setIsVisible(false);
     setTimeout(() => {
       onClose();
-      window.location.href = "/test";
+      if (test?.TestType === "MCQ") {
+      window.location.href = "/mcqtest";
+    } else {
+      window.location.href = "/test"; // for coding or any other type
+    }
     }, 300);
   };
 
